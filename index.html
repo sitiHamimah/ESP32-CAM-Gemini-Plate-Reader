@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Plate Monitor</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; }
+        .latest-card { background: #e8f0fe; border: 2px solid #1a73e8; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        #plate-display { font-size: 3.5rem; font-weight: bold; color: #202124; margin: 10px 0; letter-spacing: 2px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: #1a73e8; color: white; padding: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #ddd; }
+        tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚗 AI Plate Recognition Monitor</h1>
+    
+    <div class="latest-card">
+        <h3>Latest Detection</h3>
+        <div id="plate-display">Waiting...</div>
+        <div id="time-display" style="color: #5f6368;">Waiting for ESP32-CAM...</div>
+    </div>
+
+    <h3>History Log</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Plate Number</th>
+            </tr>
+        </thead>
+        <tbody id="log-table-body">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // Your web app's Firebase configuration
+    // Replace the placeholders below with your project's config from the Firebase Console
+    const firebaseConfig = {
+        apiKey: "REPLACE_WITH_YOUR_API_KEY",
+        authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
+        databaseURL: "REPLACE_WITH_YOUR_DATABASE_URL",
+        projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+        storageBucket: "REPLACE_WITH_YOUR_PROJECT.appspot.com",
+        messagingSenderId: "REPLACE_WITH_ID",
+        appId: "REPLACE_WITH_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Reference to your 'numberplate' node
+    const plateRef = database.ref('numberplate');
+
+    // Listen for data changes in real-time
+    plateRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        const tableBody = document.getElementById('log-table-body');
+        tableBody.innerHTML = ""; // Clear existing table
+
+        if (data) {
+            // Convert to array and reverse so newest is on top
+            const entries = Object.entries(data).reverse();
+            
+            // Update Top Card
+            const latest = entries[0][1];
+            document.getElementById('plate-display').innerText = latest.number_plate;
+            document.getElementById('time-display').innerText = latest.date_time;
+
+            // Update Table
+            entries.forEach(([key, val]) => {
+                const row = `<tr>
+                    <td>${val.date_time}</td>
+                    <td><strong>${val.number_plate}</strong></td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
